@@ -1,0 +1,15 @@
+{
+  "name": "commit-city",
+  "version": "1.0.0",
+  "description": "Turn any GitHub contribution history into an animated isometric 3D city with an autonomous car driving through it.",
+  "type": "module",
+  "bin": { "commit-city": "src/cli.js" },
+  "scripts": {
+    "demo": "node src/cli.js --demo --out docs",
+    "test": "node --test"
+  },
+  "engines": { "node": ">=18" },
+  "keywords": ["github", "contributions", "profile", "readme", "svg", "isometric", "city", "github-action"],
+  "author": "Franck Fierro",
+  "license": "MIT"
+}

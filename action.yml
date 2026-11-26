@@ -1,0 +1,126 @@
+name: 'Commit City'
+description: 'Turn your GitHub contributions into an animated isometric 3D city with an autonomous car driving through it.'
+author: 'Franck Fierro'
+branding:
+  icon: 'map'
+  color: 'red'
+
+inputs:
+  username:
+    description: 'GitHub login to render. Defaults to the repository owner.'
+    required: false
+    default: ${{ github.repository_owner }}
+  token:
+    description: 'Token for the GraphQL API. GITHUB_TOKEN works; use a PAT with read:user to include private contributions.'
+    required: false
+    default: ${{ github.token }}
+  output-dir:
+    description: 'Folder where the SVG files are written.'
+    required: false
+    default: 'commit-city'
+  themes:
+    description: 'Comma separated list of themes to render (light, dark).'
+    required: false
+    default: 'light,dark'
+  style:
+    description: 'Visual style: minimal (default), classic, blueprint, neon or clay.'
+    required: false
+    default: 'minimal'
+  months:
+    description: 'How many months to show (1-12).'
+    required: false
+    default: '12'
+  charts:
+    description: 'Optional charts to the right of the city, comma separated: months, weekdays, recent, split, languages (languages needs a token). Empty for none.'
+    required: false
+    default: 'months,weekdays,recent'
+  color:
+    description: 'Main colour (#RRGGBB): buildings get more intense the taller they are, plus the car stripe, lidar and charts.'
+    required: false
+    default: '#FF3670'
+  crane-color:
+    description: 'Colour of the construction site on today''s lot (#RRGGBB). Defaults to amber.'
+    required: false
+    default: ''
+  private-color:
+    description: 'Colour (#RRGGBB) for contributions to private repositories. Mixed days get public floors below and private floors above.'
+    required: false
+    default: '#14B8A6'
+  block:
+    description: 'Size of each city block in lots, columns x rows (6x5 = 30 days).'
+    required: false
+    default: '6x5'
+  rows:
+    description: 'Rows of city blocks: auto (1 row up to 6 blocks, otherwise 2), 1, 2 or 3.'
+    required: false
+    default: 'auto'
+  seasons:
+    description: 'Trees and grass change with the season of each day (true/false).'
+    required: false
+    default: 'true'
+  hemisphere:
+    description: 'north or south, for the seasons.'
+    required: false
+    default: 'north'
+  events:
+    description: 'Important dates, one per line: "YYYY-MM-DD Label" or "YYYY-MM-DD..YYYY-MM-DD Label". They get a pin, a highlighted lot and the car stops next to them.'
+    required: false
+    default: ''
+  event-color:
+    description: 'Colour (#RRGGBB) for events.'
+    required: false
+    default: '#A78BFA'
+  layout:
+    description: 'blocks (days packed into city blocks) or calendar (weeks as columns, like the GitHub graph).'
+    required: false
+    default: 'blocks'
+  timezone:
+    description: 'IANA time zone used to decide if it is day or night (e.g. Europe/Madrid).'
+    required: false
+    default: 'UTC'
+  latitude:
+    description: 'Optional latitude for real sunrise/sunset times. Without it, day is 07:00-19:00.'
+    required: false
+    default: ''
+  longitude:
+    description: 'Optional longitude for real sunrise/sunset times.'
+    required: false
+    default: ''
+  phase:
+    description: 'auto (follow the clock), day or night.'
+    required: false
+    default: 'auto'
+  year:
+    description: 'Render a calendar year instead of the last 12 months (e.g. 2025).'
+    required: false
+    default: ''
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Build the city
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.token }}
+        COMMIT_CITY_USER: ${{ inputs.username }}
+        COMMIT_CITY_OUT: ${{ inputs.output-dir }}
+        COMMIT_CITY_THEMES: ${{ inputs.themes }}
+        COMMIT_CITY_STYLE: ${{ inputs.style }}
+        COMMIT_CITY_MONTHS: ${{ inputs.months }}
+        COMMIT_CITY_CHARTS: ${{ inputs.charts }}
+        COMMIT_CITY_COLOR: ${{ inputs.color }}
+        COMMIT_CITY_CRANE_COLOR: ${{ inputs.crane-color }}
+        COMMIT_CITY_PRIVATE_COLOR: ${{ inputs.private-color }}
+        COMMIT_CITY_BLOCK: ${{ inputs.block }}
+        COMMIT_CITY_ROWS: ${{ inputs.rows }}
+        COMMIT_CITY_SEASONS: ${{ inputs.seasons }}
+        COMMIT_CITY_HEMISPHERE: ${{ inputs.hemisphere }}
+        COMMIT_CITY_EVENTS: ${{ inputs.events }}
+        COMMIT_CITY_EVENT_COLOR: ${{ inputs.event-color }}
+        COMMIT_CITY_LAYOUT: ${{ inputs.layout }}
+        COMMIT_CITY_TIMEZONE: ${{ inputs.timezone }}
+        COMMIT_CITY_LAT: ${{ inputs.latitude }}
+        COMMIT_CITY_LON: ${{ inputs.longitude }}
+        COMMIT_CITY_PHASE: ${{ inputs.phase }}
+        COMMIT_CITY_YEAR: ${{ inputs.year }}
+      run: node "$GITHUB_ACTION_PATH/src/cli.js"

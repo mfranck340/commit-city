@@ -1,0 +1,33 @@
+# Simple variant: rebuilds the city once a day and commits the images to the main branch.
+# Copy it to .github/workflows/commit-city.yml in your <username>/<username> repository and use
+#   <img src="commit-city/commit-city-light.svg"> / commit-city-dark.svg  in your README.
+# (The sky will always show the time of day at which the workflow runs.)
+name: Commit City
+
+on:
+  schedule:
+    - cron: '0 12 * * *' # every day at 12:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: mfranck340/commit-city@main
+        with:
+          output-dir: commit-city
+          timezone: Europe/Madrid
+          # token: ${{ secrets.COMMIT_CITY_TOKEN }}  # optional, to include private contributions
+
+      - name: Commit the new city
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add commit-city
+          git diff --cached --quiet || git commit -m "chore: rebuild commit city"
+          git push
