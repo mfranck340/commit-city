@@ -173,7 +173,8 @@ async function gql(token, query, variables) {
   });
   if (!res.ok) throw new Error(`GitHub GraphQL HTTP ${res.status}`);
   const json = await res.json();
-  if (json.errors) throw new Error(json.errors.map((e) => e.message).join('; '));
+  // Partial errors (e.g. a repository the token cannot read) still come with usable data.
+  if (json.errors && !json.data) throw new Error(json.errors.map((e) => e.message).join('; '));
   return json.data;
 }
 
@@ -189,14 +190,18 @@ export async function addPrivateSplit(login, token, days) {
     to.setUTCDate(to.getUTCDate() + 90);
     const end = to > last ? last : to;
     const data = await gql(token, SPLIT_QUERY, { login, from: from.toISOString(), to: end.toISOString() });
-    const c = data.user.contributionsCollection;
-    for (const r of c.commitContributionsByRepository) {
-      if (!r.repository.isPrivate) for (const n of r.contributions.nodes) add(n.occurredAt.slice(0, 10), n.commitCount);
+    const c = data?.user?.contributionsCollection;
+    if (!c) throw new Error('no contributionsCollection in the response');
+    // A repository the token cannot see comes back as null: count it as private.
+    const isPublic = (repo) => repo?.isPrivate === false;
+    const nodes = (r) => (r?.contributions?.nodes || []).filter(Boolean);
+    for (const r of c.commitContributionsByRepository || []) {
+      if (isPublic(r?.repository)) for (const n of nodes(r)) add(n.occurredAt.slice(0, 10), n.commitCount || 0);
     }
     for (const key of ['issueContributionsByRepository', 'pullRequestContributionsByRepository', 'pullRequestReviewContributionsByRepository']) {
-      for (const r of c[key]) if (!r.repository.isPrivate) for (const n of r.contributions.nodes) add(n.occurredAt.slice(0, 10), 1);
+      for (const r of c[key] || []) if (isPublic(r?.repository)) for (const n of nodes(r)) add(n.occurredAt.slice(0, 10), 1);
     }
-    for (const n of c.repositoryContributions.nodes) if (!n.repository.isPrivate) add(n.occurredAt.slice(0, 10), 1);
+    for (const n of c.repositoryContributions?.nodes || []) if (n && isPublic(n.repository)) add(n.occurredAt.slice(0, 10), 1);
     from = new Date(end.getTime() + 1000);
   }
   for (const d of days) d.private = Math.max(0, d.count - (pub.get(d.date) || 0));

@@ -105,3 +105,33 @@ test('rows: auto uses one row for 6 blocks and two for 12', () => {
   const w = (svg) => Number(svg.match(/width="(\d+)"/)[1]);
   assert.ok(w(twelve) < w(six) * 1.3);
 });
+
+test('private split treats repositories the token cannot see as private', async () => {
+  const { addPrivateSplit } = await import('../src/github.js');
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async () => ({
+    ok: true,
+    json: async () => ({
+      errors: [{ message: 'Resource not accessible' }],
+      data: { user: { contributionsCollection: {
+        commitContributionsByRepository: [
+          { repository: { isPrivate: false }, contributions: { nodes: [{ occurredAt: '2026-01-02T10:00:00Z', commitCount: 2 }] } },
+          { repository: null, contributions: { nodes: [{ occurredAt: '2026-01-02T11:00:00Z', commitCount: 5 }] } },
+          null,
+        ],
+        issueContributionsByRepository: [],
+        pullRequestContributionsByRepository: null,
+        pullRequestReviewContributionsByRepository: [],
+        repositoryContributions: { nodes: [null, { occurredAt: '2026-01-03T00:00:00Z', repository: null }] },
+      } } },
+    }),
+  });
+  try {
+    const days = [{ date: '2026-01-02', count: 7 }, { date: '2026-01-03', count: 1 }];
+    await addPrivateSplit('someone', 'token', days);
+    assert.equal(days[0].private, 5);
+    assert.equal(days[1].private, 1);
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});

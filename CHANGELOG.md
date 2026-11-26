@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.2 (2026-11-26)
+
+- Fix: the public/private split no longer fails when the token cannot see some repositories (they come back as `null`); those contributions now count as private instead of turning the whole city public.
+
+## 1.0.1 (2026-11-26)
+
+- Action renamed to "Commit City by mfranck340" for the GitHub Marketplace.
+
 ## 1.0.0 (2026-11-26)
 
 First release.
